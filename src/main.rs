@@ -1,9 +1,9 @@
 use itertools::Itertools;
 use petgraph::dot::{Config, Dot};
-use petgraph::graph::{DiGraph, UnGraph, NodeIndex};
+use petgraph::graph::{DiGraph, UnGraph};
 use petgraph::Direction;
 
-fn moralize<N>(mut graph: DiGraph<N, ()>) -> UnGraph<N, ()> {
+fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N, E> {
     for i in graph.node_indices() {
         let num_parents = graph.neighbors_directed(i, Direction::Incoming).count();
         if num_parents > 1 {
@@ -11,14 +11,18 @@ fn moralize<N>(mut graph: DiGraph<N, ()>) -> UnGraph<N, ()> {
             let new_edges: Vec<_> = graph
                 .neighbors_directed(i, Direction::Incoming) // All parents
                 .combinations(2) // Create pairwise parents that need moralizing
-                .filter(|v| {
-                    !graph.contains_edge(v[0], v[1]) && !graph.contains_edge(v[1], v[0]) // Filter out already connected parents
+                .filter_map(|v| {
+                    if !graph.contains_edge(v[0], v[1]) && !graph.contains_edge(v[1], v[0]) 
+                    /* Filter out already connected parents */ {
+                        Some((v[0], v[1])) // Repack into tuple
+                    } else {
+                        None
+                    }
                 })
-                .map(&|v: Vec<NodeIndex<_>>| (v[0], v[1])) // Unpack internal vectors into tuples for convenience
                 .collect();
-            let new_parents_iter = new_edges.iter().copied();
+            let new_parents_iter = new_edges.into_iter();
             for (from, to) in new_parents_iter {
-                graph.update_edge(from, to, ());
+                graph.update_edge(from, to, E::default());
             }
         }
     }
