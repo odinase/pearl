@@ -46,12 +46,12 @@ impl<X> Variable<X> {
 }
 
 
-pub trait NodePotential<X, Y> {
-    fn phi(&self, xi: Variable<X>, yi: Option<Variable<Y>>) -> f64;
+pub trait NodePotential<T> {
+    fn phi(&self, xi: Variable<T>, yi: Option<Variable<T>>) -> f64;
 }
 
-pub trait EdgePotential<X> {
-    fn psi(&self, xi: Variable<X>, xj: Variable<X>) -> f64;
+pub trait EdgePotential<T> {
+    fn psi(&self, xi: Variable<T>, xj: Variable<T>) -> f64;
 }
 
 pub struct MarkovRandomField<X, NP, EP> {
@@ -60,17 +60,16 @@ pub struct MarkovRandomField<X, NP, EP> {
     ep: EP,
 }
 
-impl<X, NP, EP> MarkovRandomField<X, NP, EP>
+impl<T, NP, EP> MarkovRandomField<T, NP, EP>
 where
-    NP: NodePotential<X, X>,
-    EP: EdgePotential<X>,
+    NP: NodePotential<T>,
+    EP: EdgePotential<T>,
 {
-    pub fn new(graph: UnGraph<Variable<X>, ()>, np: NP, ep: EP) -> Self {
+    pub fn new(graph: UnGraph<Variable<T>, ()>, np: NP, ep: EP) -> Self {
         MarkovRandomField {
             graph,
             np,
             ep,
         }
-    }
-    
+    }    
 }

@@ -8,8 +8,8 @@ pub struct Phi {
     pub beta: f64,
 }
 
-impl<X: Copy + PartialEq> NodePotential<X, X> for Phi {
-    fn phi(&self, xi: Variable<X>, yi: Option<Variable<X>>) -> f64 {
+impl<T: Copy + PartialEq> NodePotential<T> for Phi {
+    fn phi(&self, xi: Variable<T>, yi: Option<Variable<T>>) -> f64 {
         if let Some(yi) = yi {
             if xi.is_observed() {
                 let eq = yi.value() == xi.value();
@@ -24,8 +24,8 @@ pub struct Psi {
     pub alpha: f64
 }
 
-impl<X: PartialEq> EdgePotential<X> for Psi {
-    fn psi(&self, xi: Variable<X>, xj: Variable<X>) -> f64 {
+impl<T: PartialEq> EdgePotential<T> for Psi {
+    fn psi(&self, xi: Variable<T>, xj: Variable<T>) -> f64 {
         let eq = xi.value() == xj.value();
         self.alpha*(eq as u32 as f64) + (1.0 - self.alpha)*(!eq as u32 as f64)
     }
