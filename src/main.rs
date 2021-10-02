@@ -1,7 +1,9 @@
 use itertools::Itertools;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, UnGraph};
+use petgraph::visit::Dfs;
 use petgraph::Direction;
+use pearl::node::pollen_allergy_node::load_ungraph_from_file;
 
 fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N, E> {
     for i in graph.node_indices() {
@@ -30,20 +32,32 @@ fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N,
 }
 
 fn main() {
-    let digraph: DiGraph<i32, ()> =
-        DiGraph::from_edges(&[(0, 3), (2, 3), (1, 4), (3, 4), (1, 5), (4, 5), (0, 5)]);
-
+    let graph = load_ungraph_from_file("./data/family-tree.txt");
     println!(
-        "Directed graph:\n{:?}",
-        Dot::with_config(&digraph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
+        "{:?}", 
+        Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
     );
 
-    let moralized_graph = moralize(digraph);
-    println!(
-        "Moralized graph:\n{:?}",
-        Dot::with_config(
-            &moralized_graph,
-            &[Config::EdgeNoLabel, Config::NodeIndexLabel]
-        )
-    );
+    // let mut dfs = Dfs::new(&graph, 0.into());
+    // while let Some(nx) = dfs.next(&graph) {
+
+    // }
+
+    // let digraph: DiGraph<i32, ()> =
+    //     DiGraph::from_edges(&[(0, 3), (2, 3), (1, 4), (3, 4), (1, 5), (4, 5), (0, 5)]);
+
+    // println!(
+    //     "Directed graph:\n{:?}",
+    //     Dot::with_config(&digraph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
+    // );
+
+    // let moralized_graph = moralize(digraph);
+    // println!(
+    //     "Moralized graph:\n{:?}",
+    //     Dot::with_config(
+    //         &moralized_graph,
+    //         &[Config::EdgeNoLabel, Config::NodeIndexLabel]
+    //     )
+    // );
+    
 }
