@@ -3,7 +3,8 @@ use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, UnGraph};
 use petgraph::visit::Dfs;
 use petgraph::Direction;
-use pearl::node::pollen_allergy_node::load_ungraph_from_file;
+use pearl::node::pollen_allergy_node::{load_ungraph_from_file, GeneAlphabet};
+use pearl::markov::MarkovRandomField;
 
 fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N, E> {
     for i in graph.node_indices() {
@@ -32,11 +33,21 @@ fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N,
 }
 
 fn main() {
-    let graph = load_ungraph_from_file("./data/family-tree.txt");
+    let graph = load_ungraph_from_file(2.0, 1.0, "./data/family-tree.txt");
     println!(
         "{:?}", 
         Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
     );
+
+    let mrf = MarkovRandomField::<GeneAlphabet, _, _>::new(graph);
+
+    let p = mrf.sum_product();
+
+    for p in p.rows() {
+        println!("{}", p);
+    }
+
+
 
     // let mut dfs = Dfs::new(&graph, 0.into());
     // while let Some(nx) = dfs.next(&graph) {
