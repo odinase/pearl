@@ -1,7 +1,7 @@
 // use crate::node::Node;
 use itertools::Itertools;
 use ndarray::prelude::*;
-use petgraph::graph::{UnGraph, NodeIndex};
+use petgraph::graph::{NodeIndex, UnGraph};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::marker::PhantomData;
@@ -32,35 +32,48 @@ pub struct MarkovRandomField<X, NP, EP> {
 
 impl<X, NP, EP> MarkovRandomField<X, NP, EP>
 where
-X: Alphabet,
-X::State: Copy,
+    X: Alphabet,
+    X::State: Copy,
     NP: NodePotential<Value = X::State>,
     EP: EdgePotential<Value = X::State>,
 {
     pub fn new(graph: UnGraph<NP, EP>) -> Self {
-        MarkovRandomField { graph, _alphabet: PhantomData }
+        MarkovRandomField {
+            graph,
+            _alphabet: PhantomData,
+        }
     }
 
     pub fn sum_product(&self) -> Array2<f64> {
         let num_nodes = self.graph.node_count();
-        let mut M: Array3<f64> = Array::ones((X::size(), num_nodes, num_nodes));
+        let mut messages: Array3<f64> = Array::ones((X::size(), num_nodes, num_nodes));
         let d = 20; // TODO: Fix this
 
         for _ in 0..d {
             for j in 0..num_nodes {
                 for i in self.graph.neighbors((j as u32).into()).map(|i| i.index()) {
                     for (r, xj) in X::states().enumerate() {
-                        let mut m = 0.0f64;
+                        let mut message = 0.0f64;
                         for (s, xi) in X::states().enumerate() {
-                            let mut mm = 1.0f64;
-                            for k in self.graph.neighbors(NodeIndex::new(i)).filter(|&k| k.index() != j).map(|k| k.index()) {
-                                mm *= M[(s, k, i)]
+                            let mut message_from_neighbors = 1.0f64;
+                            for k in self
+                                .graph
+                                .neighbors(NodeIndex::new(i))
+                                .filter(|&k| k.index() != j)
+                                .map(|k| k.index())
+                            {
+                                message_from_neighbors *= messages[(s, k, i)]
                             }
-                            let phi = self.node_potential(i).expect("Invalid node index, but should be valid??");
-                            let psi = self.edge_potential(j, i).expect(&format!("Should be an edge between nodes {} and {}, but isn't!", j, i));
-                            m += phi.phi(xi)*psi.psi(xi, xj)*mm;
+                            let phi = self
+                                .node_potential(i)
+                                .expect("Invalid node index, but should be valid??");
+                            let psi = self.edge_potential(j, i).expect(&format!(
+                                "Should be an edge between nodes {} and {}, but isn't!",
+                                j, i
+                            ));
+                            message += phi.phi(xi) * psi.psi(xi, xj) * message_from_neighbors;
                         }
-                        M[(r, i, j)] = m;
+                        messages[(r, i, j)] = message;
                     }
                 }
             }
@@ -69,24 +82,34 @@ X::State: Copy,
         let mut p = Array2::zeros((num_nodes, X::size()));
 
         for i in 0..num_nodes {
+            let mut sum = 0.0;
             let phi = self.node_potential(i).unwrap();
             for (j, xi) in X::states().enumerate() {
-                let m: f64 = self.graph.neighbors(NodeIndex::new(i)).map(|k| M[(j, k.index(), i)]).product();
-                p[(i, j)] = phi.phi(xi)*m;
+                let incoming_messages: f64 = self
+                    .graph
+                    .neighbors(NodeIndex::new(i))
+                    .map(|k| messages[(j, k.index(), i)])
+                    .product();
+                p[(i, j)] = phi.phi(xi) * incoming_messages;
+                sum += p[(i, j)]
+            }
+            // Normalize with total sum
+            for pp in p.row_mut(i) {
+                *pp = *pp / sum;
             }
         }
 
-        p = &p/p.sum_axis(Axis(1)).insert_axis(Axis(1));
-
         p
     }
-
 
     fn node_potential(&self, index: usize) -> Option<&NP> {
         self.graph.node_weight(NodeIndex::new(index))
     }
 
     fn edge_potential(&self, node1: usize, node2: usize) -> Option<&EP> {
-        self.graph.edge_weight(self.graph.find_edge(NodeIndex::new(node1), NodeIndex::new(node2))?)
+        self.graph.edge_weight(
+            self.graph
+                .find_edge(NodeIndex::new(node1), NodeIndex::new(node2))?,
+        )
     }
 }
