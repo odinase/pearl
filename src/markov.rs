@@ -60,7 +60,7 @@ where
                                 .graph
                                 .neighbors(i) // Loop over neighboring nodes
                                 .filter(|&k| k != j) // Exclude node j from the neighboring set
-                                .map(|k| *messages.entry((s, k, i)).or_insert(0.0)) // Get the value of the message for value xi, from k to i
+                                .map(|k| *messages.entry((s, k, i)).or_insert(1.0)) // Get the value of the message for value xi, from k to i
                                 .product(); // Take the product of all messages
                             let phi = self
                                 .node_potential(i)
