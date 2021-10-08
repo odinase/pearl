@@ -52,9 +52,9 @@ fn main() {
 
     println!("Spent {} us", dt.as_nanos() as f64 /1000.0);
 
-    // for p in p.rows() {
-    //     println!("{}", p);
-    // }
+    for p in p.rows() {
+        println!("{}", p);
+    }
 
 
 

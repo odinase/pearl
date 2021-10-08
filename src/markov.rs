@@ -1,5 +1,6 @@
 // use crate::node::Node;
 use itertools::Itertools;
+use std::collections::HashMap;
 use ndarray::prelude::*;
 use petgraph::graph::{NodeIndex, UnGraph};
 use std::fs::File;
@@ -46,31 +47,31 @@ where
 
     pub fn sum_product(&self) -> Array2<f64> {
         let num_nodes = self.graph.node_count();
-        let mut messages: Array3<f64> = Array::ones((X::size(), num_nodes, num_nodes));
+        let mut messages: HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
         let d = 20; // TODO: Fix this
 
         for _ in 0..d {
-            for j in 0..num_nodes {
-                for i in self.graph.neighbors((j as u32).into()).map(|i| i.index()) {
+            for j in (0..num_nodes).map(NodeIndex::new) {
+                for i in self.graph.neighbors(j) {
                     for (r, xj) in X::states().enumerate() {
                         let mut message = 0.0f64;
                         for (s, xi) in X::states().enumerate() {
                             let message_from_neighbors: f64 =  self
                                 .graph
-                                .neighbors(NodeIndex::new(i)) // Loop over neighboring nodes
-                                .filter(|&k| k.index() != j) // Exclude node j from the neighboring set
-                                .map(|k| messages[(s, k.index(), i)]) // Get the value of the message for value xi, from k to i
+                                .neighbors(i) // Loop over neighboring nodes
+                                .filter(|&k| k != j) // Exclude node j from the neighboring set
+                                .map(|k| *messages.entry((s, k, i)).or_insert(0.0)) // Get the value of the message for value xi, from k to i
                                 .product(); // Take the product of all messages
                             let phi = self
                                 .node_potential(i)
                                 .expect("Invalid node index, but should be valid??");
                             let psi = self.edge_potential(j, i).expect(&format!(
-                                "Should be an edge between nodes {} and {}, but isn't!",
+                                "Should be an edge between nodes {:?} and {:?}, but isn't!",
                                 j, i
                             ));
                             message += phi.phi(xi) * psi.psi(xi, xj) * message_from_neighbors;
                         }
-                        messages[(r, i, j)] = message;
+                        messages.insert((r, i, j), message);
                     }
                 }
             }
@@ -78,20 +79,20 @@ where
 
         let mut p = Array2::zeros((num_nodes, X::size()));
 
-        for i in 0..num_nodes {
+        for i in (0..num_nodes).map(NodeIndex::new) {
             let mut sum = 0.0;
             let phi = self.node_potential(i).unwrap();
             for (j, xi) in X::states().enumerate() {
                 let incoming_messages: f64 = self
                     .graph
-                    .neighbors(NodeIndex::new(i))
-                    .map(|k| messages[(j, k.index(), i)])
+                    .neighbors(i)
+                    .map(|k| messages[&(j, k, i)])
                     .product();
-                p[(i, j)] = phi.phi(xi) * incoming_messages;
-                sum += p[(i, j)]
+                p[(i.index(), j)] = phi.phi(xi) * incoming_messages;
+                sum += p[(i.index(), j)]
             }
             // Normalize with total sum
-            for pp in p.row_mut(i) {
+            for pp in p.row_mut(i.index()) {
                 *pp = *pp / sum;
             }
         }
@@ -99,14 +100,14 @@ where
         p
     }
 
-    fn node_potential(&self, index: usize) -> Option<&NP> {
-        self.graph.node_weight(NodeIndex::new(index))
+    fn node_potential(&self, index: NodeIndex) -> Option<&NP> {
+        self.graph.node_weight(index)
     }
 
-    fn edge_potential(&self, node1: usize, node2: usize) -> Option<&EP> {
+    fn edge_potential(&self, node1: NodeIndex, node2: NodeIndex) -> Option<&EP> {
         self.graph.edge_weight(
             self.graph
-                .find_edge(NodeIndex::new(node1), NodeIndex::new(node2))?,
+                .find_edge(node1, node2)?,
         )
     }
 }
