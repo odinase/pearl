@@ -55,15 +55,12 @@ where
                     for (r, xj) in X::states().enumerate() {
                         let mut message = 0.0f64;
                         for (s, xi) in X::states().enumerate() {
-                            let mut message_from_neighbors = 1.0f64;
-                            for k in self
+                            let message_from_neighbors: f64 =  self
                                 .graph
-                                .neighbors(NodeIndex::new(i))
-                                .filter(|&k| k.index() != j)
-                                .map(|k| k.index())
-                            {
-                                message_from_neighbors *= messages[(s, k, i)]
-                            }
+                                .neighbors(NodeIndex::new(i)) // Loop over neighboring nodes
+                                .filter(|&k| k.index() != j) // Exclude node j from the neighboring set
+                                .map(|k| messages[(s, k.index(), i)]) // Get the value of the message for value xi, from k to i
+                                .product(); // Take the product of all messages
                             let phi = self
                                 .node_potential(i)
                                 .expect("Invalid node index, but should be valid??");
