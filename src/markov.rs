@@ -46,7 +46,7 @@ where
         }
     }
 
-    pub fn sum_product(&self) -> Array2<f64> {
+    pub fn belief_propagation(&self) -> Array2<f64> {
         let num_nodes = self.graph.node_count();
         let mut log_messages: HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
         let d = 20; // TODO: Fix this

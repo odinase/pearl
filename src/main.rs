@@ -46,7 +46,7 @@ fn main() {
     let mut times = Vec::new();
     for _ in 0..1000 {
         let start = Instant::now();
-        mrf.sum_product();
+        mrf.belief_propagation();
         let stop = Instant::now();
         let dt = stop - start;
         times.push(dt);
@@ -66,7 +66,7 @@ fn main() {
 
     println!("Spent average {} us +- {}", average, std);
 
-    let p = mrf.sum_product();
+    let p = mrf.belief_propagation();
     for p in p.rows() {
         println!("{}", p);
     }
