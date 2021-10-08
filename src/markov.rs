@@ -101,6 +101,10 @@ where
         p
     }
 
+    pub fn min_sum(&self) -> Vec<X::State> {
+
+    }
+
     fn node_potential(&self, index: NodeIndex) -> Option<&NP> {
         self.graph.node_weight(index)
     }
