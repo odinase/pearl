@@ -6,6 +6,7 @@ use petgraph::graph::{NodeIndex, UnGraph};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::marker::PhantomData;
+use crate::utils::logsumexp;
 
 pub mod potentials;
 use self::potentials::{EdgePotential, NodePotential};
@@ -47,21 +48,21 @@ where
 
     pub fn sum_product(&self) -> Array2<f64> {
         let num_nodes = self.graph.node_count();
-        let mut messages: HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
+        let mut log_messages: HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
         let d = 20; // TODO: Fix this
 
+        let mut log_message_container: Vec<f64> = Vec::with_capacity(X::size());
         for _ in 0..d {
             for n in (0..num_nodes).map(NodeIndex::new) {
                 for m in self.graph.neighbors(n) {
                     for (j, xj) in X::states().enumerate() {
-                        let mut message = 0.0f64;
                         for (i, xi) in X::states().enumerate() {
-                            let message_from_neighbors: f64 =  self
+                            let log_message_from_neighbors: f64 =  self
                                 .graph
                                 .neighbors(m) // Loop over neighboring nodes
                                 .filter(|&k| k != n) // Exclude node j from the neighboring set
-                                .map(|k| *messages.entry((i, k, m)).or_insert(1.0)) // Get the value of the message for value xi, from k to i
-                                .product(); // Take the product of all messages
+                                .map(|k| *log_messages.entry((i, k, m)).or_insert(0.0)) // Get the value of the message for value xi, from k to i
+                                .sum(); // Take the product of all messages
                             let phi = self
                                 .node_potential(m)
                                 .expect("Invalid node index, but should be valid??");
@@ -69,9 +70,10 @@ where
                                 "Should be an edge between nodes {:?} and {:?}, but isn't!",
                                 n, m
                             ));
-                            message += phi.phi(xi) * psi.psi(xi, xj) * message_from_neighbors;
+                            log_message_container.push(phi.phi(xi).ln() + psi.psi(xi, xj).ln() + log_message_from_neighbors);
                         }
-                        messages.insert((j, m, n), message);
+                        log_messages.insert((j, m, n), logsumexp(log_message_container.as_slice()));
+                        log_message_container.clear();
                     }
                 }
             }
@@ -80,20 +82,19 @@ where
         let mut p = Array2::zeros((num_nodes, X::size()));
 
         for j in (0..num_nodes).map(NodeIndex::new) {
-            let mut sum = 0.0;
             let phi = self.node_potential(j).unwrap();
             for (i, xi) in X::states().enumerate() {
-                let incoming_messages: f64 = self
+                let incoming_log_messages: f64 = self
                     .graph
                     .neighbors(j)
-                    .map(|k| messages[&(i, k, j)])
-                    .product();
-                p[(j.index(), i)] = phi.phi(xi) * incoming_messages;
-                sum += p[(j.index(), i)]
+                    .map(|k| log_messages[&(i, k, j)])
+                    .sum();
+                p[(j.index(), i)] = phi.phi(xi).ln() + incoming_log_messages;
             }
             // Normalize with total sum
+            let s = logsumexp(p.row(j.index()).as_slice().unwrap());
             for pp in p.row_mut(j.index()) {
-                *pp = *pp / sum;
+                *pp = (*pp - s).exp();
             }
         }
 

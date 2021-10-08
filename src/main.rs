@@ -66,9 +66,10 @@ fn main() {
 
     println!("Spent average {} us +- {}", average, std);
 
-    // for p in p.rows() {
-    //     println!("{}", p);
-    // }
+    let p = mrf.sum_product();
+    for p in p.rows() {
+        println!("{}", p);
+    }
 
     // let mut dfs = Dfs::new(&graph, 0.into());
     // while let Some(nx) = dfs.next(&graph) {
