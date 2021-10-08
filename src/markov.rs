@@ -51,27 +51,27 @@ where
         let d = 20; // TODO: Fix this
 
         for _ in 0..d {
-            for j in (0..num_nodes).map(NodeIndex::new) {
-                for i in self.graph.neighbors(j) {
-                    for (r, xj) in X::states().enumerate() {
+            for n in (0..num_nodes).map(NodeIndex::new) {
+                for m in self.graph.neighbors(n) {
+                    for (j, xj) in X::states().enumerate() {
                         let mut message = 0.0f64;
-                        for (s, xi) in X::states().enumerate() {
+                        for (i, xi) in X::states().enumerate() {
                             let message_from_neighbors: f64 =  self
                                 .graph
-                                .neighbors(i) // Loop over neighboring nodes
-                                .filter(|&k| k != j) // Exclude node j from the neighboring set
-                                .map(|k| *messages.entry((s, k, i)).or_insert(1.0)) // Get the value of the message for value xi, from k to i
+                                .neighbors(m) // Loop over neighboring nodes
+                                .filter(|&k| k != n) // Exclude node j from the neighboring set
+                                .map(|k| *messages.entry((i, k, m)).or_insert(1.0)) // Get the value of the message for value xi, from k to i
                                 .product(); // Take the product of all messages
                             let phi = self
-                                .node_potential(i)
+                                .node_potential(m)
                                 .expect("Invalid node index, but should be valid??");
-                            let psi = self.edge_potential(j, i).expect(&format!(
+                            let psi = self.edge_potential(n, m).expect(&format!(
                                 "Should be an edge between nodes {:?} and {:?}, but isn't!",
-                                j, i
+                                n, m
                             ));
                             message += phi.phi(xi) * psi.psi(xi, xj) * message_from_neighbors;
                         }
-                        messages.insert((r, i, j), message);
+                        messages.insert((j, m, n), message);
                     }
                 }
             }
@@ -79,20 +79,20 @@ where
 
         let mut p = Array2::zeros((num_nodes, X::size()));
 
-        for i in (0..num_nodes).map(NodeIndex::new) {
+        for j in (0..num_nodes).map(NodeIndex::new) {
             let mut sum = 0.0;
-            let phi = self.node_potential(i).unwrap();
-            for (j, xi) in X::states().enumerate() {
+            let phi = self.node_potential(j).unwrap();
+            for (i, xi) in X::states().enumerate() {
                 let incoming_messages: f64 = self
                     .graph
-                    .neighbors(i)
-                    .map(|k| messages[&(j, k, i)])
+                    .neighbors(j)
+                    .map(|k| messages[&(i, k, j)])
                     .product();
-                p[(i.index(), j)] = phi.phi(xi) * incoming_messages;
-                sum += p[(i.index(), j)]
+                p[(j.index(), i)] = phi.phi(xi) * incoming_messages;
+                sum += p[(j.index(), i)]
             }
             // Normalize with total sum
-            for pp in p.row_mut(i.index()) {
+            for pp in p.row_mut(j.index()) {
                 *pp = *pp / sum;
             }
         }
