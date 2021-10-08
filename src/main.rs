@@ -1,12 +1,11 @@
 use itertools::Itertools;
+use pearl::markov::MarkovRandomField;
+use pearl::node::pollen_allergy_node::{load_ungraph_from_file, GeneAlphabet};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, UnGraph};
 use petgraph::visit::Dfs;
 use petgraph::Direction;
-use pearl::node::pollen_allergy_node::{load_ungraph_from_file, GeneAlphabet};
-use pearl::markov::MarkovRandomField;
 use std::time::{Duration, Instant};
-
 
 fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N, E> {
     for i in graph.node_indices() {
@@ -17,8 +16,9 @@ fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N,
                 .neighbors_directed(i, Direction::Incoming) // All parents
                 .combinations(2) // Create pairwise parents that need moralizing
                 .filter_map(|v| {
-                    if !graph.contains_edge(v[0], v[1]) && !graph.contains_edge(v[1], v[0]) 
-                    /* Filter out already connected parents */ {
+                    if !graph.contains_edge(v[0], v[1]) && !graph.contains_edge(v[1], v[0])
+                    /* Filter out already connected parents */
+                    {
                         Some((v[0], v[1])) // Repack into tuple
                     } else {
                         None
@@ -37,26 +37,38 @@ fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N,
 fn main() {
     let graph = load_ungraph_from_file(2.0, 1.0, "./data/family-tree.txt");
     // println!(
-    //     "{:?}", 
+    //     "{:?}",
     //     Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
     // );
 
     let mrf = MarkovRandomField::<GeneAlphabet, _, _>::new(graph);
 
-    let start = Instant::now();
-    
-    let p = mrf.sum_product();
-    
-    let stop = Instant::now();
-    let dt = stop - start;
-
-    println!("Spent {} us", dt.as_nanos() as f64 /1000.0);
-
-    for p in p.rows() {
-        println!("{}", p);
+    let mut times = Vec::new();
+    for _ in 0..1000 {
+        let start = Instant::now();
+        mrf.sum_product();
+        let stop = Instant::now();
+        let dt = stop - start;
+        times.push(dt);
     }
+    let average: f64 = times
+        .iter()
+        .map(|t| t.as_nanos() as f64 / 1000.0)
+        .sum::<f64>()
+        / times.len() as f64;
+    let std: f64 = (times
+        .iter()
+        .map(|t| (t.as_nanos() as f64 / 1000.0))
+        .map(|t| (t - average) * (t - average))
+        .sum::<f64>()
+        / times.len() as f64)
+        .sqrt();
 
+    println!("Spent average {} us +- {}", average, std);
 
+    // for p in p.rows() {
+    //     println!("{}", p);
+    // }
 
     // let mut dfs = Dfs::new(&graph, 0.into());
     // while let Some(nx) = dfs.next(&graph) {
@@ -79,5 +91,4 @@ fn main() {
     //         &[Config::EdgeNoLabel, Config::NodeIndexLabel]
     //     )
     // );
-    
 }
