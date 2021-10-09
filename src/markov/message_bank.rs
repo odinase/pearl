@@ -20,6 +20,50 @@ impl MessageBank {
         num_states,
     }
 }
+
+    pub fn message(&self, from: NodeIndex, to: NodeIndex) -> &[f64] {
+        if self.indices.borrow().contains_key(&(from, to)) {
+            let i = self.indices.borrow()[&(from, to)];
+            &self.bank[i..i+self.num_states]
+        } else {
+            let mut last_idx = self.last_added_idx.borrow_mut();
+            match *last_idx {
+                Some(idx) => {
+                    let new_idx = idx + self.num_states;
+                    *last_idx = Some(new_idx);
+                    self.indices.borrow_mut().insert((from, to), new_idx);
+                    &self.bank[new_idx..new_idx + self.num_states]
+                },
+                None => {
+                    *last_idx = Some(0);
+                    self.indices.borrow_mut().insert((from, to), 0);
+                    &self.bank[0..self.num_states]
+                }
+            }
+        }
+}
+
+pub fn message_mut(&mut self, from: NodeIndex, to: NodeIndex) -> &mut [f64] {
+    if self.indices.borrow().contains_key(&(from, to)) {
+        let i = self.indices.borrow()[&(from, to)];
+        &mut self.bank[i..i+self.num_states]
+    } else {
+        let mut last_idx = self.last_added_idx.borrow_mut();
+        match *last_idx {
+            Some(idx) => {
+                let new_idx = idx + self.num_states;
+                *last_idx = Some(new_idx);
+                self.indices.borrow_mut().insert((from, to), new_idx);
+                &mut self.bank[new_idx..new_idx + self.num_states]
+            },
+            None => {
+                *last_idx = Some(0);
+                self.indices.borrow_mut().insert((from, to), 0);
+                &mut self.bank[0..self.num_states]
+            }
+        }
+    }
+}
 }
 
 impl Index<(usize, NodeIndex, NodeIndex)> for MessageBank {
