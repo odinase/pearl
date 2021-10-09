@@ -4,6 +4,41 @@ use std::cell::RefCell;
 use petgraph::graph::NodeIndex;
 
 
+pub struct MessageRef<'a> {
+    message: &'a [f64]
+}
+
+impl<'a> MessageRef<'a> {
+    fn from_slice(message: &'a [f64]) -> Self {
+        MessageRef {
+            message
+        }
+    }
+
+    pub fn eval_state(&self, state: usize) -> &f64 {
+        &self.message[state]
+    }
+}
+
+
+pub struct MessageRefMut<'a> {
+    message: &'a mut [f64]
+}
+
+
+impl<'a> MessageRefMut<'a> {
+    fn from_slice_mut(message: &'a mut [f64]) -> Self {
+        MessageRefMut {
+            message
+        }
+    }
+
+    pub fn eval_state_mut(&mut self, state: usize) -> &mut f64 {
+        &mut self.message[state]
+    }
+}
+
+
 pub struct MessageBank {
     indices: RefCell<HashMap<(NodeIndex, NodeIndex), usize>>,
     bank: Vec<f64>,
@@ -21,10 +56,10 @@ impl MessageBank {
     }
 }
 
-    pub fn message(&self, from: NodeIndex, to: NodeIndex) -> &[f64] {
+    pub fn message(&self, from: NodeIndex, to: NodeIndex) -> MessageRef {
         if self.indices.borrow().contains_key(&(from, to)) {
             let i = self.indices.borrow()[&(from, to)];
-            &self.bank[i..i+self.num_states]
+            MessageRef::from_slice(&self.bank[i..i+self.num_states])
         } else {
             let mut last_idx = self.last_added_idx.borrow_mut();
             match *last_idx {
@@ -32,21 +67,21 @@ impl MessageBank {
                     let new_idx = idx + self.num_states;
                     *last_idx = Some(new_idx);
                     self.indices.borrow_mut().insert((from, to), new_idx);
-                    &self.bank[new_idx..new_idx + self.num_states]
+                    MessageRef::from_slice(&self.bank[new_idx..new_idx + self.num_states])
                 },
                 None => {
                     *last_idx = Some(0);
                     self.indices.borrow_mut().insert((from, to), 0);
-                    &self.bank[0..self.num_states]
+                    MessageRef::from_slice(&self.bank[0..self.num_states])
                 }
             }
         }
 }
 
-pub fn message_mut(&mut self, from: NodeIndex, to: NodeIndex) -> &mut [f64] {
+pub fn message_mut(&mut self, from: NodeIndex, to: NodeIndex) -> MessageRefMut {
     if self.indices.borrow().contains_key(&(from, to)) {
         let i = self.indices.borrow()[&(from, to)];
-        &mut self.bank[i..i+self.num_states]
+        MessageRefMut::from_slice_mut(&mut self.bank[i..i+self.num_states])
     } else {
         let mut last_idx = self.last_added_idx.borrow_mut();
         match *last_idx {
@@ -54,12 +89,12 @@ pub fn message_mut(&mut self, from: NodeIndex, to: NodeIndex) -> &mut [f64] {
                 let new_idx = idx + self.num_states;
                 *last_idx = Some(new_idx);
                 self.indices.borrow_mut().insert((from, to), new_idx);
-                &mut self.bank[new_idx..new_idx + self.num_states]
+                MessageRefMut::from_slice_mut(&mut self.bank[new_idx..new_idx + self.num_states])
             },
             None => {
                 *last_idx = Some(0);
                 self.indices.borrow_mut().insert((from, to), 0);
-                &mut self.bank[0..self.num_states]
+                MessageRefMut::from_slice_mut(&mut self.bank[0..self.num_states])
             }
         }
     }

@@ -64,7 +64,7 @@ where
                                 .graph
                                 .neighbors(m) // Loop over neighboring nodes
                                 .filter(|&k| k != n) // Exclude node j from the neighboring set
-                                .map(|k| log_messages.message(k, m)[i]) // Get the value of the message for value xi, from k to i
+                                .map(|k| *log_messages.message(k, m).eval_state(i)) // Get the value of the message for value xi, from k to i
                                 .sum(); // Take the product of all messages
                             let phi = self
                                 .node_potential(m)
@@ -75,7 +75,7 @@ where
                             ));
                             log_message_container.push(phi.phi(xi).ln() + psi.psi(xi, xj).ln() + log_message_from_neighbors);
                         }
-                        log_messages.message_mut(m, n)[j] = logsumexp(log_message_container.as_slice());
+                        *log_messages.message_mut(m, n).eval_state_mut(j) = logsumexp(log_message_container.as_slice());
                         log_message_container.clear();
                     }
                 }
@@ -90,7 +90,7 @@ where
                 let incoming_log_messages: f64 = self
                     .graph
                     .neighbors(j)
-                    .map(|k| log_messages.message(k, j)[i])
+                    .map(|k| *log_messages.message(k, j).eval_state(i))
                     .sum();
                 p[(j.index(), i)] = phi.phi(xi).ln() + incoming_log_messages;
             }
