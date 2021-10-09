@@ -9,6 +9,9 @@ use std::marker::PhantomData;
 use crate::utils::logsumexp;
 
 pub mod potentials;
+pub mod message_bank;
+
+use self::message_bank::MessageBank;
 use self::potentials::{EdgePotential, NodePotential};
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -48,7 +51,7 @@ where
 
     pub fn belief_propagation(&self) -> Array2<f64> {
         let num_nodes = self.graph.node_count();
-        let mut log_messages: HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
+        let mut log_messages = MessageBank::new(X::size(), num_nodes, 0.0);//HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
         let d = 20; // TODO: Fix this
 
         let mut log_message_container: Vec<f64> = Vec::with_capacity(X::size());
@@ -61,7 +64,7 @@ where
                                 .graph
                                 .neighbors(m) // Loop over neighboring nodes
                                 .filter(|&k| k != n) // Exclude node j from the neighboring set
-                                .map(|k| *log_messages.entry((i, k, m)).or_insert(0.0)) // Get the value of the message for value xi, from k to i
+                                .map(|k| log_messages[(i, k, m)]) // Get the value of the message for value xi, from k to i
                                 .sum(); // Take the product of all messages
                             let phi = self
                                 .node_potential(m)
@@ -72,7 +75,7 @@ where
                             ));
                             log_message_container.push(phi.phi(xi).ln() + psi.psi(xi, xj).ln() + log_message_from_neighbors);
                         }
-                        log_messages.insert((j, m, n), logsumexp(log_message_container.as_slice()));
+                        log_messages[(j, m, n)] = logsumexp(log_message_container.as_slice());
                         log_message_container.clear();
                     }
                 }
@@ -87,7 +90,7 @@ where
                 let incoming_log_messages: f64 = self
                     .graph
                     .neighbors(j)
-                    .map(|k| log_messages[&(i, k, j)])
+                    .map(|k| log_messages[(i, k, j)])
                     .sum();
                 p[(j.index(), i)] = phi.phi(xi).ln() + incoming_log_messages;
             }
