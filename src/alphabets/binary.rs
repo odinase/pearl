@@ -1,13 +1,23 @@
 use super::{Alphabet, Observation};
 use crate::markov::potentials::{EdgePotential, NodePotential};
-use rand_distr::{Uniform, Distribution};
 use rand::Rng;
+use rand_distr::{Distribution, Uniform};
+use std::fmt;
 
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 pub enum BinaryAlphabet {
-        Zero,
-        One,
+    Zero,
+    One,
+}
+
+impl fmt::Display for BinaryAlphabet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BinaryAlphabet::Zero => write!(f, "0"),
+            BinaryAlphabet::One => write!(f, "1"),
+        }
     }
+}
 
 impl BinaryAlphabet {
     pub fn random<R: Rng>(mut rng: &mut R) -> Self {
@@ -92,6 +102,15 @@ impl<T: PartialEq> NodePotential for Phi<T> {
     }
 }
 
+impl<T: fmt::Display> fmt::Display for Phi<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.observed {
+            Observation::Observed(v) => write!(f, "{}", v),
+            Observation::Unobserved => write!(f, "???"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, PartialOrd, Copy, Clone)]
 pub struct Psi {
     alpha: f64,
@@ -109,5 +128,11 @@ impl EdgePotential for Psi {
     fn psi(&self, xi: Self::Value, xj: Self::Value) -> f64 {
         let eq = xi == xj;
         self.alpha * (eq as u32 as f64) + (!eq as u32 as f64)
+    }
+}
+
+impl fmt::Display for Psi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "")
     }
 }

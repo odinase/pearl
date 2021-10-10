@@ -46,7 +46,7 @@ fn main() {
     let mut rng: StdRng = SeedableRng::seed_from_u64(12345);
     let num_nodes = 150;
     let mrf = testing::random_binary_mrf(num_nodes, &mut rng);
-    printing::print_mrf_to_file("mrf.txt", &mrf);
+    printing::print_mrf_to_file_with_config("mrf.txt", &mrf, &[Config::EdgeNoLabel]);
 
     let mut times = Vec::new();
     for _ in 0..1000 {
