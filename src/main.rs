@@ -1,11 +1,14 @@
 use itertools::Itertools;
 use pearl::markov::MarkovRandomField;
-use pearl::node::pollen_allergy_node::{load_ungraph_from_file, GeneAlphabet};
+use pearl::alphabets::pollen_allergy::{load_ungraph_from_file, GeneAlphabet};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, UnGraph};
 use petgraph::visit::Dfs;
 use petgraph::Direction;
 use std::time::{Duration, Instant};
+use pearl::utils::{testing, printing};
+use rand::{rngs::StdRng, SeedableRng};
+
 
 fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N, E> {
     for i in graph.node_indices() {
@@ -35,13 +38,15 @@ fn moralize<N, E: std::default::Default>(mut graph: DiGraph<N, E>) -> UnGraph<N,
 }
 
 fn main() {
-    let graph = load_ungraph_from_file(2.0, 1.0, "./data/family-tree.txt");
-    // println!(
-    //     "{:?}",
-    //     Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
-    // );
-
-    let mrf = MarkovRandomField::<GeneAlphabet, _, _>::new(graph);
+    // let graph = load_ungraph_from_file(2.0, 1.0, "./data/family-tree.txt");
+    // // println!(
+    // //     "{:?}",
+    // //     Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
+    // // );
+    let mut rng: StdRng = SeedableRng::seed_from_u64(12345);
+    let num_nodes = 150;
+    let mrf = testing::random_binary_mrf(num_nodes, &mut rng);
+    printing::print_mrf_to_file("mrf.txt", &mrf);
 
     let mut times = Vec::new();
     for _ in 0..1000 {
