@@ -44,12 +44,12 @@ fn main() {
     // //     Dot::with_config(&graph, &[Config::EdgeNoLabel, Config::NodeIndexLabel])
     // // );
     let mut rng: StdRng = SeedableRng::seed_from_u64(12345);
-    let num_nodes = 150;
+    let num_nodes = 1000;
     let mrf = testing::random_binary_mrf(num_nodes, &mut rng);
     printing::print_mrf_to_file_with_config("mrf.txt", &mrf, &[Config::EdgeNoLabel]);
 
     let mut times = Vec::new();
-    for _ in 0..1000 {
+    for _ in 0..100 {
         let start = Instant::now();
         mrf.belief_propagation();
         let stop = Instant::now();
@@ -72,9 +72,9 @@ fn main() {
     println!("Spent average {} us +- {}", average, std);
 
     let p = mrf.belief_propagation();
-    for p in p.rows() {
-        println!("{}", p);
-    }
+    // for p in p.rows() {
+    //     println!("{}", p);
+    // }
 
     // let mut dfs = Dfs::new(&graph, 0.into());
     // while let Some(nx) = dfs.next(&graph) {
