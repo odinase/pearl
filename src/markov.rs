@@ -8,6 +8,7 @@ use std::io::{self, BufRead, BufReader};
 use std::marker::PhantomData;
 use crate::utils::functions::logsumexp;
 use crate::alphabets::Alphabet;
+use argmax::Argmax;
 
 pub mod potentials;
 pub mod message_bank;
@@ -90,6 +91,39 @@ where
     }
 
     pub fn min_sum(&self) -> Vec<X::State> {
+        let num_nodes = self.graph.node_count();
+        let mut log_messages = MessageBank::new(X::size(), num_nodes, 0.0);//HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
+        let d = 20; // TODO: Fix this
+
+let mut backpointers: Vec<Vec<f64>> = Vec::with_capacity(num_nodes);
+        for _ in 0..d {
+            for n in (0..num_nodes).map(NodeIndex::new) {
+                for m in self.graph.neighbors(n) {
+                    for (j, xj) in X::states().enumerate() {
+                        let mut log_message_container = Vec::new();
+                        for (i, xi) in X::states().enumerate() {
+                            let log_message_from_neighbors: f64 =  self
+                                .graph
+                                .neighbors(m) // Loop over neighboring nodes
+                                .filter(|&k| k != n) // Exclude node j from the neighboring set
+                                .map(|k| *log_messages.message(k, m).eval_state(i)) // Get the value of the message for value xi, from k to i
+                                .sum(); // Take the product of all messages
+                            let phi = self
+                                .node_potential(m)
+                                .expect("Invalid node index, but should be valid??");
+                            let psi = self.edge_potential(n, m).expect(&format!(
+                                "Should be an edge between nodes {:?} and {:?}, but isn't!",
+                                n, m
+                            ));
+                            log_message_container.push(phi.phi(xi).ln() + psi.psi(xi, xj).ln() + log_message_from_neighbors);
+                        }
+                        backpointers.push(log_message_container);
+                    }
+                }
+            }
+        }
+
+        todo!()
 
     }
 

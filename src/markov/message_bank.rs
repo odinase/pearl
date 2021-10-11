@@ -15,6 +15,10 @@ impl<'a> MessageRef<'a> {
     pub fn eval_state(&self, state: usize) -> &f64 {
         &self.message[state]
     }
+
+    pub fn iter(&'a self) -> std::slice::Iter<'a, f64> {
+        self.message.iter()
+    }
 }
 
 pub struct MessageRefMut<'a> {
@@ -28,6 +32,10 @@ impl<'a> MessageRefMut<'a> {
 
     pub fn eval_state_mut(&mut self, state: usize) -> &mut f64 {
         &mut self.message[state]
+    }
+
+    pub fn iter_mut(&'a mut self) -> std::slice::IterMut<'a, f64> {
+        self.message.iter_mut()
     }
 }
 
