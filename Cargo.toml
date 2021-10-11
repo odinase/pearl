@@ -13,3 +13,5 @@ ndarray = "0.15.3"
 argmax = {version= "0.1.0", git = "https://github.com/odinase/argmax"}
 rand_distr = "0.4.2"
 rand = "0.8.4"
+timed = "0.2.1"
+log = "0.4"

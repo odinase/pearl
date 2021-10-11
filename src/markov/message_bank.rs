@@ -2,16 +2,18 @@ use petgraph::graph::NodeIndex;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
+use timed::timed;
 
 pub struct MessageRef<'a> {
     message: &'a [f64],
 }
 
 impl<'a> MessageRef<'a> {
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     fn from_slice(message: &'a [f64]) -> Self {
         MessageRef { message }
     }
-
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     pub fn eval_state(&self, state: usize) -> &f64 {
         &self.message[state]
     }
@@ -22,10 +24,11 @@ pub struct MessageRefMut<'a> {
 }
 
 impl<'a> MessageRefMut<'a> {
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     fn from_slice_mut(message: &'a mut [f64]) -> Self {
         MessageRefMut { message }
     }
-
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     pub fn eval_state_mut(&mut self, state: usize) -> &mut f64 {
         &mut self.message[state]
     }
@@ -48,6 +51,7 @@ impl MessageBank {
         }
     }
 
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     pub fn message(&self, from: NodeIndex, to: NodeIndex) -> MessageRef {
         if self.indices.borrow().contains_key(&(from, to)) {
             let i = self.indices.borrow()[&(from, to)];
@@ -70,6 +74,7 @@ impl MessageBank {
         }
     }
 
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     pub fn message_mut(&mut self, from: NodeIndex, to: NodeIndex) -> MessageRefMut {
         if self.indices.borrow().contains_key(&(from, to)) {
             let i = self.indices.borrow()[&(from, to)];

@@ -8,6 +8,7 @@ use std::io::{self, BufRead, BufReader};
 use std::marker::PhantomData;
 use crate::utils::functions::logsumexp;
 use crate::alphabets::Alphabet;
+use timed::timed;
 
 pub mod potentials;
 pub mod message_bank;
@@ -34,7 +35,10 @@ where
         }
     }
 
+    #[timed::timed(tracing(enabled = true), duration(disabled = true))]
     pub fn belief_propagation(&self) -> Array2<f64> {
+        let trace = timed::Trace::new("belief_propagation");
+
         let num_nodes = self.graph.node_count();
         let mut log_messages = MessageBank::new(X::size(), num_nodes, 0.0);//HashMap<(usize, NodeIndex, NodeIndex), f64> = HashMap::new();
         let d = 20; // TODO: Fix this
@@ -86,6 +90,7 @@ where
             }
         }
 
+        println!("{}", trace.statistics());
         p
     }
 

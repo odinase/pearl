@@ -46,30 +46,30 @@ fn main() {
     let mut rng: StdRng = SeedableRng::seed_from_u64(12345);
     let num_nodes = 1000;
     let mrf = testing::random_binary_mrf(num_nodes, &mut rng);
-    printing::print_mrf_to_file_with_config("mrf.txt", &mrf, &[Config::EdgeNoLabel]);
+    // printing::print_mrf_to_file_with_config("mrf.txt", &mrf, &[Config::EdgeNoLabel]);
 
-    let mut times = Vec::new();
-    for _ in 0..100 {
-        let start = Instant::now();
-        mrf.belief_propagation();
-        let stop = Instant::now();
-        let dt = stop - start;
-        times.push(dt);
-    }
-    let average: f64 = times
-        .iter()
-        .map(|t| t.as_nanos() as f64 / 1000.0)
-        .sum::<f64>()
-        / times.len() as f64;
-    let std: f64 = (times
-        .iter()
-        .map(|t| (t.as_nanos() as f64 / 1000.0))
-        .map(|t| (t - average) * (t - average))
-        .sum::<f64>()
-        / times.len() as f64)
-        .sqrt();
+    // let mut times = Vec::new();
+    // for _ in 0..100 {
+    //     let start = Instant::now();
+    //     mrf.belief_propagation();
+    //     let stop = Instant::now();
+    //     let dt = stop - start;
+    //     times.push(dt);
+    // }
+    // let average: f64 = times
+    //     .iter()
+    //     .map(|t| t.as_nanos() as f64 / 1000.0)
+    //     .sum::<f64>()
+    //     / times.len() as f64;
+    // let std: f64 = (times
+    //     .iter()
+    //     .map(|t| (t.as_nanos() as f64 / 1000.0))
+    //     .map(|t| (t - average) * (t - average))
+    //     .sum::<f64>()
+    //     / times.len() as f64)
+    //     .sqrt();
 
-    println!("Spent average {} us +- {}", average, std);
+    // println!("Spent average {} us +- {}", average, std);
 
     let p = mrf.belief_propagation();
     // for p in p.rows() {
