@@ -11,3 +11,5 @@ itertools = "0.10.1"
 petgraph = "0.6.0"
 ndarray = "0.15.3"
 argmax = {version= "0.1.0", git = "https://github.com/odinase/argmax"}
+rand_distr = "0.4.2"
+rand = "0.8.4"

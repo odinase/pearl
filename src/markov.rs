@@ -6,7 +6,8 @@ use petgraph::graph::{NodeIndex, UnGraph};
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
 use std::marker::PhantomData;
-use crate::utils::logsumexp;
+use crate::utils::functions::logsumexp;
+use crate::alphabets::Alphabet;
 
 pub mod potentials;
 pub mod message_bank;
@@ -14,24 +15,8 @@ pub mod message_bank;
 use self::message_bank::MessageBank;
 use self::potentials::{EdgePotential, NodePotential};
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
-pub enum Observation<T> {
-    Observed(T),
-    Unobserved,
-}
-
-pub trait Alphabet {
-    type State;
-    type StateIter: Iterator<Item = Self::State>;
-
-    fn size() -> usize {
-        Self::states().count()
-    }
-    fn states() -> Self::StateIter;
-}
-
 pub struct MarkovRandomField<X, NP, EP> {
-    graph: UnGraph<NP, EP>,
+    pub(crate) graph: UnGraph<NP, EP>,
     _alphabet: PhantomData<X>,
 }
 

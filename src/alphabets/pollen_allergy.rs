@@ -1,5 +1,5 @@
 use crate::markov::potentials::{EdgePotential, NodePotential};
-use crate::markov::{Alphabet, Observation};
+use crate::alphabets::{Alphabet, Observation};
 use petgraph::graph::UnGraph;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
