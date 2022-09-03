@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 itertools = "0.10.1"
 petgraph = "0.6.0"
-ndarray = "0.15.3"
+ndarray = "*"
 argmax = {version= "0.1.0", git = "https://github.com/odinase/argmax"}
